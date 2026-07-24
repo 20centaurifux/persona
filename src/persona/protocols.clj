@@ -3,23 +3,23 @@
 (defprotocol Writer
   "Backend operations that atomically persist or delete persona data."
 
-  (write-persona! [this persona]
-    "Creates or replaces `persona` and returns nil.")
+  (write-persona! [this ns persona]
+    "Creates or replaces `persona` in `ns` and returns nil.")
 
-  (delete-persona! [this id]
-    "Deletes the persona identified by `id` and all of its assignments.
+  (delete-persona! [this ns id]
+    "Deletes the persona identified by `id` in `ns` and all of its assignments.
 
     Returns nil. Throws ExceptionInfo if the persona does not exist.")
 
-  (write-assignments! [this persona-id assignments]
-    "Atomically persists `assignments` for `persona-id` and returns nil.
+  (write-assignments! [this ns persona-id assignments]
+    "Atomically persists `assignments` for `persona-id` in `ns` and returns nil.
 
     `assignments` is a vector of maps containing :subject and :scope.
     Persisting the same assignment more than once has no additional effect.
     Throws ExceptionInfo if the persona does not exist.")
 
-  (delete-assignments! [this query]
-    "Atomically deletes assignments matching `query` and returns them as a set.
+  (delete-assignments! [this ns query]
+    "Atomically deletes assignments matching `query` in `ns` and returns them as a set.
 
     Every supplied :subject-match, :subject, :persona-id, and :scope value must
     match. An empty `query` deletes all assignments. Returns an empty
@@ -28,16 +28,16 @@
 (defprotocol Reader
   "Backend operations that retrieve personas or assignments."
 
-  (read-persona [this id]
-    "Returns the persona identified by `id`, or nil when it does not exist.")
+  (read-persona [this ns id]
+    "Returns the persona identified by `id` in `ns`, or nil when absent.")
 
-  (read-personas [this]
-    "Returns a vector containing all personas in unspecified order.")
+  (read-personas [this ns]
+    "Returns all personas in `ns` as a vector in unspecified order.")
 
   (read-assignments
-    [this]
-    [this query]
-    "Returns a vector containing all assignments or those matching `query`.
+    [this ns]
+    [this ns query]
+    "Returns assignments in `ns`, optionally restricted by `query`.
 
     Every supplied :subject-match, :subject, :persona-id, and :scope value must
     match. The order of the returned assignments is unspecified."))

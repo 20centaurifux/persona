@@ -49,11 +49,13 @@
          ~(invalid-parameter-form spec-value parameter-value parameter)))))
 
 (defn throw-persona-not-found
-  "Throws ExceptionInfo for a missing persona.
+  "Throws ExceptionInfo for a missing persona in namespace `ns`.
 
-  The exception data contains `persona-id` as :persona-id."
-  [persona-id]
+  The exception data contains `ns` as :namespace and `persona-id` as
+  :persona-id."
+  [ns persona-id]
   (throw
    (ex-info
     (str "Persona does not exist: " persona-id)
-    {:persona-id persona-id})))
+    {:namespace ns
+     :persona-id persona-id})))

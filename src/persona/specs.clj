@@ -12,6 +12,8 @@
         :integer integer?
         :string non-blank-string?))
 
+(s/def ::namespace ::id)
+
 (s/def ::provider ::id)
 
 (s/def ::subject

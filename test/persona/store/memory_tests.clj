@@ -56,6 +56,9 @@
 (deftest allowed?
   (with-memory-store core-tests/test-allowed?))
 
+(deftest namespaces-are-isolated
+  (with-memory-store core-tests/test-namespaces-are-isolated))
+
 ;;; snapshot tests
 
 (deftest reader-uses-snapshot

@@ -2,9 +2,9 @@
 
 A lightweight hierarchical authorization library for Clojure.
 
-`persona` provides an authorization model based on **personas**, **subjects**,
-and **scopes**. It is intentionally independent of authentication, identity
-providers, and application-specific domain models.
+`persona` provides an authorization model based on **namespaces**, **personas**,
+**subjects**, and **scopes**. It is intentionally independent of authentication,
+identity providers, and application-specific domain models.
 
 The library answers a single question:
 
@@ -33,6 +33,7 @@ reading and writing:
 
 (persona/put-persona!
  store
+ :acme
  {:id :editor
   :name "Editor"
   :permissions #{:document/read
@@ -41,6 +42,7 @@ reading and writing:
 
 (persona/put-assignments!
  store
+ :acme
  :editor
  [{:subject {:provider :ldap
              :id "team:editors"}
@@ -49,6 +51,7 @@ reading and writing:
 
 (persona/allowed?
  store
+ :acme
  #{{:provider :ldap
     :id "team:editors"}}
  :document/publish
@@ -60,7 +63,26 @@ reading and writing:
 
 ## Concepts
 
-### `persona`
+### Namespace
+
+A namespace separates personas and assignments belonging to different
+applications, tenants, or other domains within the same store. It is supplied
+as the `ns` parameter to every persona, assignment, resolution, and
+authorization operation:
+
+```clojure
+(persona/personas store :acme)
+(persona/personas store :other-tenant)
+```
+
+Personas and assignments in one namespace are isolated from every other
+namespace. The same persona ID may therefore have different definitions and
+assignments in different namespaces. Reading, resolving, authorizing, or
+deleting data in one namespace does not access or affect data in another.
+
+Namespace values may be keywords, integers, or non-blank strings.
+
+### persona
 
 A persona is a collection of permissions:
 
@@ -122,6 +144,7 @@ Subject ──► Persona ──► Scope
 ```clojure
 (persona/put-assignments!
  store
+ :acme
  :editor
  [{:subject {:provider :ldap
              :id "team:editors"}
@@ -143,9 +166,9 @@ scopes itself.
 
 ## Public API
 
-All public operations receive a store rather than a Reader or Writer.
-Read operations require a `ReadableStore`; write operations require a
-`WritableStore`. A store may implement both protocols.
+All public data operations receive a store and a namespace. Read operations
+require a `ReadableStore`; write operations require a `WritableStore`. A store
+may implement both protocols.
 
 Use the predicates to inspect a store's capabilities:
 
@@ -157,11 +180,11 @@ Use the predicates to inspect a store's capabilities:
 ### persona operations
 
 ```clojure
-(persona/put-persona! writable-store persona)
-(persona/remove-persona! writable-store id)
+(persona/put-persona! writable-store ns persona)
+(persona/remove-persona! writable-store ns id)
 
-(persona/persona readable-store id)
-(persona/personas readable-store)
+(persona/persona readable-store ns id)
+(persona/personas readable-store ns)
 ```
 
 `put-persona!` creates or replaces a persona. Removing a persona also removes
@@ -173,15 +196,16 @@ vector in unspecified order.
 ```clojure
 (persona/put-assignments!
  writable-store
+ ns
  persona-id
  [{:subject subject
    :scope scope}])
 
-(persona/remove-assignments! writable-store)
-(persona/remove-assignments! writable-store query)
+(persona/remove-assignments! writable-store ns)
+(persona/remove-assignments! writable-store ns query)
 
-(persona/assignments readable-store)
-(persona/assignments readable-store query)
+(persona/assignments readable-store ns)
+(persona/assignments readable-store ns query)
 ```
 
 `put-assignments!` writes a vector of subject and scope pairs atomically. The
@@ -203,9 +227,9 @@ returns the matching assignments as a vector in unspecified order.
 ### Effective assignments and personas
 
 ```clojure
-(persona/resolve-assignments readable-store subjects path)
-(persona/resolve-persona-ids readable-store subjects path)
-(persona/effective-personas readable-store subjects path)
+(persona/resolve-assignments readable-store ns subjects path)
+(persona/resolve-persona-ids readable-store ns subjects path)
+(persona/effective-personas readable-store ns subjects path)
 ```
 
 `subjects` must be a set of subjects and `path` must be a vector of scopes.
@@ -219,7 +243,7 @@ returns the matching assignments as a vector in unspecified order.
 ### Authorization
 
 ```clojure
-(persona/allowed? readable-store subjects permission path)
+(persona/allowed? readable-store ns subjects permission path)
 ```
 
 For example:
@@ -227,6 +251,7 @@ For example:
 ```clojure
 (persona/allowed?
  store
+ :acme
  #{{:provider :ldap
     :id "team:editors"}}
  :document/publish
@@ -255,6 +280,9 @@ The access protocols contain the backend operations:
 - `Writer` provides `write-persona!`, `delete-persona!`,
   `write-assignments!`, and `delete-assignments!`.
 
+Every Reader and Writer operation receives `ns`; backend implementations must
+keep persona and assignment data isolated by that namespace.
+
 The public API opens a Reader or Writer for each operation and closes it with
 `with-open`. `persona.core/open-read` and `persona.core/open-write` always
 return a `java.io.Closeable`. If a backend handle is not closeable, `persona`
@@ -268,8 +296,9 @@ the application's responsibility.
 ### In-memory store
 
 `persona.store.memory/->memory-store` creates an empty store implementing both
-`ReadableStore` and `WritableStore`. Each reader uses a snapshot taken when it
-is opened. Writers update the state used for subsequently opened readers:
+`ReadableStore` and `WritableStore`. It stores each namespace independently.
+Each reader uses a snapshot taken when it is opened. Writers update the state
+used for subsequently opened readers:
 
 ```clojure
 (require '[persona.store.memory :as memory])

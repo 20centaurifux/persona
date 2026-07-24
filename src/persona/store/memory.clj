@@ -33,57 +33,59 @@
 
 (deftype MemoryWriter [state]
   protocols/Writer
-  (write-persona! [_ persona]
-    (swap! state assoc-in [:personas (:id persona)] persona)
+  (write-persona! [_ ns persona]
+    (swap! state assoc-in [:namespaces ns :personas (:id persona)] persona)
     nil)
 
-  (delete-persona! [_ id]
+  (delete-persona! [_ ns id]
     (swap! state
            (fn [store]
-             (when-not (contains? (:personas store) id)
-               (errors/throw-persona-not-found id))
+             (when-not (contains? (get-in store [:namespaces ns :personas]) id)
+               (errors/throw-persona-not-found ns id))
              (-> store
-                 (update :personas dissoc id)
-                 (update :assignments
+                 (update-in [:namespaces ns :personas] dissoc id)
+                 (update-in [:namespaces ns :assignments]
                          (fn [assignments]
                            (into #{}
                                  (remove #(= id (:persona-id %)))
                                  assignments))))))
     nil)
 
-  (write-assignments! [_ persona-id assignments]
+  (write-assignments! [_ ns persona-id assignments]
     (swap! state
            (fn [store]
-             (when-not (contains? (:personas store) persona-id)
-               (errors/throw-persona-not-found persona-id))
+             (when-not (contains? (get-in store [:namespaces ns :personas])
+                                  persona-id)
+               (errors/throw-persona-not-found ns persona-id))
 
-             (update store :assignments
-                     into
-                     (map #(assignment persona-id (:subject %) (:scope %))
-                          assignments))))
+             (update-in store [:namespaces ns :assignments]
+                        (fnil into #{})
+                        (map #(assignment persona-id (:subject %) (:scope %))
+                             assignments))))
     nil)
 
-  (delete-assignments! [_ query]
-    (let [[before _]
-          (swap-vals! state update :assignments
+  (delete-assignments! [_ ns query]
+    (let [path [:namespaces ns :assignments]
+          [before _]
+          (swap-vals! state update-in path
                       #(into #{} (remove (partial matches-query? query)) %))]
       (into #{} (filter (partial matches-query? query))
-            (:assignments before)))))
+            (get-in before path)))))
 
 (deftype MemoryReader [snapshot]
   protocols/Reader
-  (read-persona [_ id]
-    (get-in snapshot [:personas id]))
+  (read-persona [_ ns id]
+    (get-in snapshot [:namespaces ns :personas id]))
 
-  (read-personas [_]
-    (vec (vals (:personas snapshot))))
+  (read-personas [_ ns]
+    (vec (vals (get-in snapshot [:namespaces ns :personas]))))
 
-  (read-assignments [_]
-    (vec (:assignments snapshot)))
+  (read-assignments [_ ns]
+    (vec (get-in snapshot [:namespaces ns :assignments])))
 
-  (read-assignments [_ query]
+  (read-assignments [_ ns query]
     (into [] (filter (partial matches-query? query))
-          (:assignments snapshot))))
+          (get-in snapshot [:namespaces ns :assignments]))))
 
 (deftype MemoryStore [state]
   protocols/ReadableStore
@@ -101,5 +103,4 @@
   the shared state used to create subsequent Reader snapshots."
   []
   (->MemoryStore
-   (atom {:personas {}
-          :assignments #{}})))
+   (atom {:namespaces {}})))

@@ -116,13 +116,13 @@
   (with-open [reader (open-read readable-store)]
     (resolve-assignments* reader subjects path)))
 
-(defn- resolve-personas-ids*
+(defn- resolve-persona-ids*
   [reader subjects path]
   (into #{}
         (map :persona-id)
         (resolve-assignments* reader subjects path)))
 
-(defn resolve-personas-ids
+(defn resolve-persona-ids
   "Returns persona IDs effective for any subject in `subjects` along `path`."
   [readable-store subjects path]
   (errors/validate-spec! readable-store? readable-store)
@@ -130,7 +130,7 @@
   (errors/validate-spec! ::specs/path path)
 
   (with-open [reader (open-read readable-store)]
-    (resolve-personas-ids* reader subjects path)))
+    (resolve-persona-ids* reader subjects path)))
 
 (defn effective-personas
   "Returns the set of existing personas effective for `subjects` along `path`.
@@ -144,7 +144,7 @@
   (with-open [reader (open-read readable-store)]
     (into #{}
           (keep (partial protocols/read-persona reader))
-          (resolve-personas-ids* reader subjects path))))
+          (resolve-persona-ids* reader subjects path))))
 
 (defn allowed?
   "Returns true if an effective persona contains `permission`.

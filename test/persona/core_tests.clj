@@ -340,20 +340,20 @@
 
   (testing "unique persona IDs along the path"
     (is (= #{:editor :viewer}
-           (persona/resolve-personas-ids
+           (persona/resolve-persona-ids
             readable-store #{editors} [document project]))))
 
   (testing "empty subjects"
-    (is (= #{} (persona/resolve-personas-ids readable-store #{} [project]))))
+    (is (= #{} (persona/resolve-persona-ids readable-store #{} [project]))))
 
   (testing "invalid parameters"
     (is-invalid-parameter :readable-store nil
-                          #(persona/resolve-personas-ids
+                          #(persona/resolve-persona-ids
                             nil #{editors} [project]))
     (is-invalid-parameter :subjects nil
-                          #(persona/resolve-personas-ids readable-store nil [project]))
+                          #(persona/resolve-persona-ids readable-store nil [project]))
     (is-invalid-parameter :path nil
-                          #(persona/resolve-personas-ids readable-store #{editors} nil))))
+                          #(persona/resolve-persona-ids readable-store #{editors} nil))))
 
 (defn test-effective-personas
   [readable-store writable-store]

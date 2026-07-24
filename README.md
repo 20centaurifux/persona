@@ -204,7 +204,7 @@ returns the matching assignments as a vector in unspecified order.
 
 ```clojure
 (persona/resolve-assignments readable-store subjects path)
-(persona/resolve-personas-ids readable-store subjects path)
+(persona/resolve-persona-ids readable-store subjects path)
 (persona/effective-personas readable-store subjects path)
 ```
 
@@ -212,7 +212,7 @@ returns the matching assignments as a vector in unspecified order.
 
 - `resolve-assignments` returns all assignments effective for at least one
   subject on any scope in the path.
-- `resolve-personas-ids` returns the corresponding unique persona IDs.
+- `resolve-persona-ids` returns the corresponding unique persona IDs.
 - `effective-personas` returns the corresponding existing persona definitions.
   Assignments referring to a missing persona are ignored.
 

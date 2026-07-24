@@ -190,29 +190,33 @@
   (with-open [writer (open-write writable-store)]
     (protocols/write-assignments! writer ns persona-id assignments)))
 
+(defn remove-all-assignments!
+  "Atomically removes all assignments from namespace `ns` of `writable-store`.
+
+  Returns the removed assignments as a set."
+  [writable-store ns]
+  (errors/validate-spec! writable-store? writable-store)
+  (errors/validate-spec! ::specs/namespace ns)
+
+  (with-open [writer (open-write writable-store)]
+    (into #{} (protocols/delete-assignments! writer ns {}))))
+
 (defn remove-assignments!
   "Atomically removes matching assignments from namespace `ns` of
   `writable-store`.
 
-  With no `query`, removes all assignments. With a `query`, removes every
-  assignment matching all supplied :subject-match, :subject, :persona-id, and
-  :scope values. `query` must be non-empty and may not contain other keys.
+  Removes every assignment matching all supplied :subject-match, :subject,
+  :persona-id, and :scope values. `query` must be non-empty and may not
+  contain other keys.
 
   Returns the removed assignments as a set, or an empty set if none match."
-  ([writable-store ns]
-   (errors/validate-spec! writable-store? writable-store)
-   (errors/validate-spec! ::specs/namespace ns)
+  [writable-store ns query]
+  (errors/validate-spec! writable-store? writable-store)
+  (errors/validate-spec! ::specs/namespace ns)
+  (errors/validate-spec! ::specs/assignments-query query)
 
-   (with-open [writer (open-write writable-store)]
-     (into #{} (protocols/delete-assignments! writer ns {}))))
-
-  ([writable-store ns query]
-   (errors/validate-spec! writable-store? writable-store)
-   (errors/validate-spec! ::specs/namespace ns)
-   (errors/validate-spec! ::specs/assignments-query query)
-
-   (with-open [writer (open-write writable-store)]
-     (into #{} (protocols/delete-assignments! writer ns query)))))
+  (with-open [writer (open-write writable-store)]
+    (into #{} (protocols/delete-assignments! writer ns query))))
 
 (defn assignments
   "Returns assignments from namespace `ns` of `readable-store`.

@@ -201,7 +201,7 @@ vector in unspecified order.
  [{:subject subject
    :scope scope}])
 
-(persona/remove-assignments! writable-store ns)
+(persona/remove-all-assignments! writable-store ns)
 (persona/remove-assignments! writable-store ns query)
 
 (persona/assignments readable-store ns)
@@ -211,8 +211,8 @@ vector in unspecified order.
 `put-assignments!` writes a vector of subject and scope pairs atomically. The
 referenced persona must exist.
 
-The arity without a query selects all assignments. A query must be non-empty
-and may contain these keys:
+`remove-all-assignments!` removes every assignment in `ns`.
+`remove-assignments!` requires a non-empty query, which may contain these keys:
 
 - `:subject` matches a complete subject.
 - `:subject-match` matches by `:provider`, `:id`, or both. At least one field
@@ -221,8 +221,9 @@ and may contain these keys:
 - `:scope` matches a complete scope.
 
 All supplied query fields must match. Unknown query keys are rejected.
-`remove-assignments!` returns the removed assignments as a set; `assignments`
-returns the matching assignments as a vector in unspecified order.
+`remove-all-assignments!` and `remove-assignments!` return the removed
+assignments as a set; `assignments` returns the matching assignments as a
+vector in unspecified order.
 
 ### Effective assignments and personas
 

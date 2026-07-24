@@ -202,5 +202,6 @@
     (is (true? @reader-closed?))
 
     (is (= 1
-           (count (persona/remove-assignments! (writable-store writer) :test))))
+           (count (persona/remove-all-assignments!
+                   (writable-store writer) :test))))
     (is (true? @writer-closed?))))

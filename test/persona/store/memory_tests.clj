@@ -38,6 +38,9 @@
 (deftest put-assignments!
   (with-memory-store core-tests/test-put-assignments!))
 
+(deftest remove-all-assignments!
+  (with-memory-store core-tests/test-remove-all-assignments!))
+
 (deftest remove-assignments!
   (with-memory-store core-tests/test-remove-assignments!))
 

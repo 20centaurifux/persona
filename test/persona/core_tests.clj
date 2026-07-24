@@ -210,6 +210,29 @@
                                  {:subject {:provider tenant1-ns} :scope document}]))
     (is (= 2 (count (persona/assignments readable-store tenant1-ns))))))
 
+(defn test-remove-all-assignments!
+  [readable-store writable-store]
+  (persona/put-persona! writable-store tenant1-ns editor)
+  (persona/put-persona! writable-store tenant1-ns viewer)
+  (doseq [[persona-id subject scope]
+          [[:editor editors project]
+           [:editor viewers document]
+           [:viewer viewers project]]]
+    (assign! writable-store persona-id subject scope))
+
+  (testing "removing all assignments"
+    (is (= #{(assignment :editor editors project)
+             (assignment :editor viewers document)
+             (assignment :viewer viewers project)}
+           (persona/remove-all-assignments! writable-store tenant1-ns)))
+    (is (empty? (persona/assignments readable-store tenant1-ns))))
+
+  (testing "invalid parameters"
+    (is-invalid-parameter :writable-store nil
+                          #(persona/remove-all-assignments! nil tenant1-ns))
+    (is-invalid-parameter :ns nil
+                          #(persona/remove-all-assignments! writable-store nil))))
+
 (defn test-remove-assignments!
   [readable-store writable-store]
   (persona/put-persona! writable-store tenant1-ns editor)
@@ -223,28 +246,21 @@
   (testing "removing matching assignments"
     (is (= #{(assignment :editor editors project)
              (assignment :editor viewers document)}
-           (persona/remove-assignments! writable-store tenant1-ns {:subject-match {:provider tenant1-ns}
-                                                                   :persona-id :editor})))
+           (persona/remove-assignments! writable-store tenant1-ns
+                                        {:subject-match {:provider tenant1-ns}
+                                         :persona-id :editor})))
     (is (= #{(assignment :viewer viewers project)}
            (set (persona/assignments readable-store tenant1-ns)))))
 
   (testing "query without matches"
     (is (= #{}
-           (persona/remove-assignments! writable-store tenant1-ns {:persona-id :missing})))
+           (persona/remove-assignments! writable-store tenant1-ns
+                                        {:persona-id :missing})))
     (is (= 1 (count (persona/assignments readable-store tenant1-ns)))))
-
-  (testing "removing all assignments"
-    (is (= #{(assignment :viewer viewers project)}
-           (persona/remove-assignments! writable-store tenant1-ns)))
-    (is (empty? (persona/assignments readable-store tenant1-ns))))
 
   (testing "invalid parameters"
     (is-invalid-parameter :writable-store nil
-                          #(persona/remove-assignments! nil tenant1-ns))
-    (is-invalid-parameter :writable-store nil
                           #(persona/remove-assignments! nil tenant1-ns {}))
-    (is-invalid-parameter :ns nil
-                          #(persona/remove-assignments! writable-store nil))
     (is-invalid-parameter :ns nil
                           #(persona/remove-assignments! writable-store nil
                                                         {:persona-id :viewer}))
@@ -485,7 +501,7 @@
                  readable-store tenant2-ns
                  #{subject} :document/read [scope])))
 
-    (persona/remove-assignments! writable-store tenant1-ns)
+    (persona/remove-all-assignments! writable-store tenant1-ns)
     (is (empty? (persona/assignments readable-store tenant1-ns)))
     (is (= 1 (count (persona/assignments readable-store tenant2-ns))))
 

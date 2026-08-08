@@ -45,10 +45,10 @@
              (-> store
                  (update-in [:namespaces ns :personas] dissoc id)
                  (update-in [:namespaces ns :assignments]
-                         (fn [assignments]
-                           (into #{}
-                                 (remove #(= id (:persona-id %)))
-                                 assignments))))))
+                            (fn [assignments]
+                              (into #{}
+                                    (remove #(= id (:persona-id %)))
+                                    assignments))))))
     nil)
 
   (write-assignments! [_ ns persona-id assignments]
@@ -72,6 +72,8 @@
       (into #{} (filter (partial matches-query? query))
             (get-in before path)))))
 
+(alter-meta! #'->MemoryWriter assoc :private true)
+
 (deftype MemoryReader [snapshot]
   protocols/Reader
   (read-persona [_ ns id]
@@ -87,6 +89,8 @@
     (into [] (filter (partial matches-query? query))
           (get-in snapshot [:namespaces ns :assignments]))))
 
+(alter-meta! #'->MemoryReader assoc :private true)
+
 (deftype MemoryStore [state]
   protocols/ReadableStore
   (open-read [_]
@@ -95,6 +99,8 @@
   protocols/WritableStore
   (open-write [_]
     (->MemoryWriter state)))
+
+(alter-meta! #'->MemoryStore assoc :private true)
 
 (defn ->memory-store
   "Creates an empty in-memory ReadableStore and WritableStore.
